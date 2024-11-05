@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <script src="https://cdn.jsdelivr.net/npm/p5@1.11.0/lib/p5.min.js"></script>
+    </head>
+    <body>
+        <script>
+            let w = 600;
+            let res = 16;
+            let matrix = [
+                [-1, 2],[2, 1]
+            ]
+            function transform(point, mat) {
+                let result = [] 
+                for(let i = 0; i < mat.length; i++){
+                    let sum = 0;
+                    for(let j = 0; j < point.length; j++) {
+                        sum += point[j] * mat[i][j]
+                    }
+                    result.push(sum)
+                }
+                return result
+            }
+            function findDirection(points) {
+                let dif= []
+                for(let j = 0; j < points.length; j++) {
+                    dif.push(points[1][j] - points[0][j])
+                }
+                return dif
+            }
+            function findMult(starting, direction, state) {
+                let edges = [0, w]
+                let mults = []
+                for(let i = 0; i < edges.length; i++) {
+                    mults.push((edges[i] - starting[(state + 1 ) % 2])/direction[(state+1)%2]);
+                }
+                return mults;
+            }
+            function findNewFree(direction, mults, state) {
+                let edges = [0, w]
+                let aligned = []
+                for(let i =0; i < edges.length; i++) {
+                    aligned.push(edges[i] - direction[state] * mults[i])
+                }
+                return aligned;
+            }
+            function drawLines(){
+                stroke(255, 0, 0)
+                strokeWeight(4)
+                for(let i = 0; i < 2; i++) {
+                    for(let j = 0; j < res-1; j++) {
+                        points = [[(i % 2) * (j+1) * w/res, ((i+1) % 2) * (j+1) * w/res],
+                        [(i % 2) * (j+1) * w/res + ((i + 1)%2) * w, (i+1 % 2) * (j+1) * w/res+ (i%2) * w]]
+                        for(let k = 0; k < points.length; k++) {
+                            points[k] = transform(points[k], matrix)
+                        }
+						let dir = findDirection(points)
+						console.log(dir)
+						for(let k = 0; k < points.length; k++) {
+							points[k][i] = findNewFree(dir, findMult(points[0], dir, i), i);
+						}
+                        let combinedPoints = []
+                        for(let i = 0; i < points.length; i++) {
+                            for(let j = 0; j < 2; j++) {
+                                combinedPoints.push(points[i][j])
+                            }
+                        }
+                        line(...combinedPoints)
+                    }
+                }
+            }
+            function setup() {
+                createCanvas(600, 600)
+            }
+            function draw() {
+                background(0)
+                drawLines()
+            }
+        </script>
+    </body>
+</html>
