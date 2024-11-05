@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Complete the "square"</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+		<script src="https://cdn.jsdelivr.net/npm/p5@1.11.1/lib/p5.min.js"></script>
+	</head>
+	<body>
+		<script>
+			let space = []
+			let selected = -1;
+			let playingDim = [600, 300]
+			let sSize = 4;
+			let blockQ = sSize ** 2 / 2
+			let blocks = new Array(7).fill(0)
+			let centre = []
+			let start = []
+			let alertBox = []
+			let available = blockQ;
+			let previousStates = []
+			function setup() {
+				createCanvas(window.innerWidth, window.innerHeight)
+				for(let i = 0; i < sSize; i++){
+					space.push([])
+					for(let j = 0; j < sSize * 2; j++) {
+						space[i].push(-1)
+					}
+				}
+				for(let i = 0; i < blockQ; i++) {
+				
+					blocks[Math.floor(Math.random() * 7)] ++ ;
+				}
+				
+				centre = [window.innerWidth, window.innerHeight].map(x => x/2)
+				start = centre.map((x,i) => x-playingDim[i]/2)
+
+				setClickRegions();
+			}
+			window.onresize = e => {
+				resizeCanvas(window.innerWidth, window.innerHeight)
+				centre = [window.innerWidth, window.innerHeight].map(x => x/2)
+				
+				start = centre.map((x,i) => x-playingDim[i]/2)
+				setClickRegions();
+			}
+			
+			let models = [
+				[
+					[1, 1, 1, 1],
+				],
+				[
+					[1, 0, 0],
+					[1, 1, 1]
+				],
+				[
+					[0, 0, 1],
+					[1, 1, 1]
+				],
+				[
+					[1, 1],
+					[1, 1]
+				],
+				[
+					[0, 1, 1],
+					[1, 1, 0]
+				],
+				[
+					[1, 1, 0],
+					[0, 1, 1]
+				],
+				[
+					[0, 1, 0],
+					[1, 1, 1]
+				]
+				
+			]
+			let colours = [[49, 199, 239], [90, 101, 173], [239, 121, 33], [247, 211, 8], [66, 182, 66], [239, 32, 41], [173, 77, 156]]
+			let dBlockS = 25;
+			let clickRegions = []
+			let rotation = 0;
+			function setClickRegions() {
+				clickRegions = []
+				let gPos = 0;
+				for(let i = 0; i < models.length; i++) {
+					let vPos = 0
+					for(let j = 0; j < models[i].length; j++) {
+						let hPos = 0;
+						for(let k = 0; k < models[i][j].length; k++) {
+							if(j === 0 && k === 0) {
+								clickRegions.push([gPos + hPos + centre[0]-playingDim[0]/2, vPos+centre[1] + playingDim[1] /2 + dBlockS])
+							}
+							if(j + 1 === models[i].length && k + 1 === models[i][j].length) {
+								clickRegions[clickRegions.length-1].push(gPos + hPos + centre[0]-playingDim[0]/2 + dBlockS, vPos+centre[1] + playingDim[1] /2 + dBlockS * 2)
+							}
+							hPos += dBlockS;
+						}
+						vPos += dBlockS;
+					}
+					gPos += (models[i][0].length + 1) * dBlockS
+				}
+			}
+			function displayBlocks() {
+				let gPos = 0
+				let maxV = 0;
+
+				for(let i = 0; i < models.length; i++) {
+					if(models[i].length * dBlockS > maxV) {
+						maxV = models[i].length * dBlockS
+					}
+				}
+				for(let i = 0; i < models.length; i++) {
+					let vPos = 0;
+					fill(...colours[i])
+					for(let j =0; j < models[i].length; j++) {
+						let hPos = 0
+						for(let k = 0; k < models[i][j].length; k++){
+							
+							if(models[i][j][k] === 1) {
+								rect(gPos + hPos + centre[0]-playingDim[0]/2, vPos+centre[1] + playingDim[1] /2 + dBlockS, dBlockS)
+							}
+							hPos += dBlockS
+						}
+						vPos += dBlockS
+					}
+					fill(255)
+					text(blocks[i], gPos+centre[0]-playingDim[0]/2, maxV + 2 * dBlockS + centre[1] + playingDim[1] /2 + dBlockS)
+					gPos += (models[i][0].length + 1) * dBlockS
+				}
+			}
+			function rotateModel(model) {
+				let dim = [model[0].length, model.length]
+				let result = []
+				for(let i = 0; i < dim[0]; i++) {
+					result.push([])
+					for(let j =0; j < dim[1]; j++) {
+						result[i].push(0)
+					}
+				}
+				for(let i =0; i < model.length; i++) {
+					for(let j = 0; j < model[i].length; j++) {
+						result[j][model.length-1-i] = model[i][j]
+					}
+				}
+				return result
+				
+			}
+			function drawBlocks() {
+				for(let i = 0; i < space.length; i++) {
+					for(let j = 0; j < space[i].length; j++) {
+						if(space[i][j] !== -1) {
+							fill(...colours[space[i][j]])
+							let relativeCoords = [j, i].map(x => x * playingDim[0]/(sSize*2))
+							
+							rect(...start.map((x, k) => x + relativeCoords[k]), playingDim[0]/(sSize*2))
+						}
+					}
+				}
+			}
+			function displayAlertBox() {
+				if(alertBox.length > 0 && alertBox[2] > alertBox[1]) {
+					textAlign(CENTER)
+					fill(255, 255, 255, Math.sqrt(alertBox[2] - alertBox[1])/Math.sqrt(alertBox[2]) * 255)
+					text(alertBox[0], centre[0], centre[1]-playingDim[1]/2 - dBlockS)
+					alertBox[1]+=0.01;
+				}
+			}
+			function drawPreview() { 
+				if(selected !== -1) {
+					let usableModel = models[selected]
+					for(let i = 0; i < rotation; i++) {
+						usableModel = rotateModel(usableModel)
+					}
+					for(let i =0 ; i < usableModel.length; i++) {
+						for(let j =0 ; j < usableModel[i].length; j++) {
+							if(usableModel[i][j] === 1) {
+								fill(...colours[selected])
+								rect(centre[0] + playingDim[0]/2+dBlockS + dBlockS * j, centre[1] + dBlockS * i, dBlockS)
+							}
+						}
+					}
+				}
+			}
+			function draw(){
+				background(0)
+				fill(255)
+				rect(...start, ...playingDim)
+				
+				displayBlocks();
+				drawBlocks();
+				displayAlertBox();
+				drawPreview();
+			}
+			function keyPressed() {
+				switch(key) {
+					case "x":
+						if(selected) {
+							rotation ++;
+							rotation %= 4;
+						}
+						break;
+					case "z":
+						if(selected){
+							rotation+= 3;
+							rotation %= 4;
+						}
+						break;
+					case "r":
+						let previousState = previousStates[previousStates.length - 1]
+						let initial = previousState.changes[0]
+						let pieceType = space[initial[1]][initial[0]]
+						rotation = previousState.rotation;
+						selected = pieceType;
+						available++;
+						blocks[selected]++;
+						for(let i =0; i<previousState.changes.length; i++) {
+							let coords = previousState.changes[i]
+							space[coords[1]][coords[0]] = -1;
+						}
+						previousState.pop();
+				}
+			}
+			function mousePressed() {
+				for(let i =0; i < clickRegions.length; i++) {
+					
+					if(clickRegions[i][0] <= mouseX && clickRegions[i][2] > mouseX && clickRegions[i][1] <= mouseY && clickRegions[i][3] > mouseY) {
+						selected = i
+					}
+				}
+				let centre = [window.innerWidth, window.innerHeight].map(x => x/2)
+				let start = centre.map((x,i) => x-playingDim[i]/2)
+				if(selected !== -1 && start[0] <= mouseX && start[1] <= mouseY && start[0] + playingDim[0] > mouseX && start[1] + playingDim[1] > mouseY) {
+					let allowed = true
+					let adjustedCoord = [Math.floor((mouseX - start[0])/playingDim[0] * sSize*2), Math.floor((mouseY - start[1])/playingDim[0]*sSize*2)]
+					let usableModel = models[selected];
+					for(let i = 0; i < rotation; i++) {
+						usableModel = rotateModel(usableModel)
+					}
+					for(let i = 0; i < usableModel.length; i++) {
+						for(let j = 0; j < usableModel[i].length; j++) {
+							if(adjustedCoord[1] + i >= space.length || adjustedCoord[0] + j >= space[0].length) { 
+								allowed = false;
+								alertBox = ["Not allowed", 0, 2]
+								break;
+							}
+							if(usableModel[i][j] === 1 && space[adjustedCoord[1] + i][adjustedCoord[0] + j] !== -1) {
+								allowed = false;
+								alertBox = ["Not allowed", 0, 2]
+							}
+						}
+					}
+					if(blocks[selected] === 0) {
+						alertBox = ["Not enough pieces", 0, 2]
+					}
+					if(allowed && blocks[selected] > 0) {
+						previousStates.push({changes: [], rotation: 0})
+						for(let i = 0; i < usableModel.length; i++) {
+							for(let j = 0; j < usableModel[i].length; j++) {
+								if(usableModel[i][j] === 1) {
+									space[adjustedCoord[1] + i][adjustedCoord[0] + j] = selected;
+									previousStates[previousStates.length-1].changes.push([adjustedCoord[0] + j, adjustedCoord[1] + i])
+								}
+							}
+						}
+						previousStates[previousStates.length-1].rotation = rotation;
+						blocks[selected] --;
+						available --;
+						if(available === 0) {
+							alertBox = ["Completed", 0, 2]
+						}
+						selected = -1;
+						rotation = 0;
+					}
+				}
+			}
+		</script>
+	</body>
+</html>
