@@ -200,13 +200,13 @@
 			function keyPressed() {
 				switch(key) {
 					case "x":
-						if(selected) {
+						if(selected !== -1) {
 							rotation ++;
 							rotation %= 4;
 						}
 						break;
 					case "z":
-						if(selected){
+						if(selected !== -1){
 							rotation+= 3;
 							rotation %= 4;
 						}
